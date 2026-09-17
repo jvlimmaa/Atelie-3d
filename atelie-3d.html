@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ateliê 3D — Configurador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#221F1B;
+    --panel:#2B2723;
+    --panel-2:#35302A;
+    --panel-3:#403A32;
+    --stage-bg-1:#ECE3D2;
+    --stage-bg-2:#DDD0B4;
+    --accent:#C9A227;
+    --accent-soft:#E6C55A;
+    --accent-2:#2F6F63;
+    --text-light:#F3ECDF;
+    --text-muted:#B4A995;
+    --line:rgba(243,236,223,0.12);
+    --danger:#B4573F;
+    font-family:'Work Sans',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--text-light);overflow:hidden;}
+  body{display:flex;flex-direction:column;}
+
+  ::selection{background:var(--accent);color:var(--ink);}
+
+  #app{display:flex;width:100%;height:100%;min-height:100vh;}
+
+  /* ---------- SIDEBAR ---------- */
+  #sidebar{
+    width:308px;flex:0 0 308px;background:var(--panel);
+    display:flex;flex-direction:column;
+    border-right:1px solid var(--line);
+    overflow-y:auto;
+    position:relative;
+    z-index:5;
+  }
+  #sidebar::-webkit-scrollbar{width:8px;}
+  #sidebar::-webkit-scrollbar-thumb{background:var(--panel-3);border-radius:4px;}
+
+  .brand{padding:26px 22px 18px;border-bottom:1px solid var(--line);}
+  .brand h1{
+    font-family:'Fraunces',serif;font-weight:600;font-style:italic;
+    font-size:24px;margin:0 0 4px;color:var(--text-light);letter-spacing:0.2px;
+  }
+  .brand p{margin:0;font-size:12.5px;color:var(--text-muted);line-height:1.5;}
+
+  .mode-toggle{
+    margin:18px 22px 6px;position:relative;background:var(--panel-2);
+    border-radius:9px;display:flex;padding:3px;border:1px solid var(--line);
+  }
+  .mode-toggle button{
+    flex:1;border:none;background:transparent;color:var(--text-muted);
+    font-family:'Work Sans',sans-serif;font-weight:600;font-size:13px;
+    padding:9px 6px;border-radius:6px;cursor:pointer;position:relative;z-index:2;
+    transition:color .25s;
+  }
+  .mode-toggle button.active{color:var(--ink);}
+  .mode-toggle .indicator{
+    position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);
+    background:var(--accent);border-radius:6px;transition:transform .28s cubic-bezier(.65,0,.35,1);
+  }
+  .mode-toggle button:nth-child(2).active ~ .indicator,
+  #sidebar[data-mode="product"] .indicator{transform:translateX(100%);}
+
+  .section{padding:18px 22px;border-bottom:1px solid var(--line);}
+  .section-title{
+    font-size:11px;text-transform:uppercase;letter-spacing:1.1px;color:var(--accent-soft);
+    font-weight:600;margin:0 0 4px;
+  }
+  .section-hint{font-size:12px;color:var(--text-muted);margin:0 0 14px;line-height:1.5;}
+
+  select.room-select{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text-light);
+    font-family:'Work Sans',sans-serif;font-size:13.5px;font-weight:500;padding:9px 10px;
+    border-radius:7px;cursor:pointer;margin-top:4px;
+  }
+
+  .swatch-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .swatch{
+    width:26px;height:26px;border-radius:6px;border:2px solid rgba(255,255,255,0.15);
+    cursor:pointer;transition:transform .15s, border-color .15s;padding:0;
+  }
+  .swatch:hover{transform:translateY(-2px);}
+  .swatch.selected{border-color:var(--text-light);}
+  .custom-color-row{display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .custom-color-row input[type=color]{
+    width:34px;height:34px;border:none;border-radius:7px;background:none;cursor:pointer;padding:0;
+  }
+  .custom-color-row span{font-size:12px;color:var(--text-muted);}
+
+  .item-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+  .item-btn{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
+    padding:12px 6px 10px;cursor:pointer;color:var(--text-light);
+    font-family:'Work Sans',sans-serif;font-size:12px;font-weight:500;
+    transition:border-color .18s, background .18s;
+  }
+  .item-btn .ico{font-size:20px;line-height:1;}
+  .item-btn:hover{border-color:var(--accent);}
+  .item-btn.active{background:var(--accent);color:var(--ink);border-color:var(--accent);}
+
+  .placing-banner{
+    margin-top:12px;background:rgba(201,162,39,0.14);border:1px dashed var(--accent);
+    border-radius:8px;padding:10px 12px;font-size:12px;color:var(--accent-soft);
+    display:none;align-items:center;justify-content:space-between;gap:8px;
+  }
+  .placing-banner.show{display:flex;}
+  .placing-banner button{
+    background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;line-height:1;
+  }
+
+  .parts-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+  .part-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:7px;
+    padding:8px 10px;font-size:12.5px;cursor:pointer;
+  }
+  .part-row.selected{border-color:var(--accent);background:rgba(201,162,39,0.1);}
+  .part-row span.name{display:flex;align-items:center;gap:8px;}
+  .part-row .dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
+  .part-row button{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 4px;}
+  .part-row button:hover{color:var(--danger);}
+  .empty-note{font-size:12px;color:var(--text-muted);margin-top:10px;font-style:italic;}
+
+  .ghost-btn{
+    width:100%;margin-top:12px;background:transparent;border:1px solid var(--line);
+    color:var(--text-muted);font-family:'Work Sans',sans-serif;font-weight:600;font-size:12.5px;
+    padding:9px;border-radius:7px;cursor:pointer;transition:border-color .18s, color .18s;
+  }
+  .ghost-btn:hover{border-color:var(--danger);color:var(--danger);}
+
+  .solid-btn{
+    width:100%;margin-top:10px;background:var(--accent-2);border:none;
+    color:var(--text-light);font-family:'Work Sans',sans-serif;font-weight:600;font-size:13px;
+    padding:11px;border-radius:7px;cursor:pointer;transition:filter .15s;
+  }
+  .solid-btn:hover{filter:brightness(1.12);}
+  .solid-btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+  /* ---------- STAGE ---------- */
+  #stage{
+    flex:1;position:relative;
+    background:radial-gradient(circle at 32% 24%, var(--stage-bg-1), var(--stage-bg-2) 75%);
+  }
+  #three-canvas{width:100%;height:100%;display:block;touch-action:none;}
+
+  .stage-hint{
+    position:absolute;left:24px;bottom:22px;background:rgba(34,31,27,0.78);
+    color:var(--text-light);font-size:11.5px;padding:9px 14px;border-radius:20px;
+    backdrop-filter:blur(4px);pointer-events:none;letter-spacing:0.2px;
+  }
+
+  .room-label{
+    position:absolute;top:24px;left:24px;
+    font-family:'Fraunces',serif;font-style:italic;font-weight:600;font-size:22px;
+    color:var(--ink);pointer-events:none;text-shadow:0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  /* properties panel */
+  #props-panel{
+    position:absolute;right:22px;bottom:22px;width:250px;
+    background:var(--panel);border-left:4px solid var(--accent);
+    border-radius:4px;padding:16px 16px 18px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.28);
+    display:none;
+  }
+  #props-panel.show{display:block;}
+  #props-panel .props-title{
+    font-family:'Fraunces',serif;font-weight:600;font-style:italic;font-size:17px;
+    margin:0 0 2px;color:var(--text-light);
+  }
+  #props-panel .props-sub{font-size:11px;color:var(--text-muted);margin:0 0 12px;text-transform:uppercase;letter-spacing:0.8px;}
+  .props-label{font-size:11px;color:var(--accent-soft);text-transform:uppercase;letter-spacing:0.7px;margin:12px 0 6px;font-weight:600;}
+  .props-label:first-of-type{margin-top:0;}
+  input[type=range]{
+    width:100%;accent-color:var(--accent);height:4px;
+  }
+  .rotate-row{display:flex;gap:8px;margin-top:2px;}
+  .rotate-row button{
+    flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text-light);
+    padding:8px 0;border-radius:6px;cursor:pointer;font-size:14px;
+  }
+  .rotate-row button:hover{border-color:var(--accent);}
+  .delete-btn{
+    width:100%;margin-top:14px;background:transparent;border:1px solid rgba(180,87,63,0.5);
+    color:#E0A18E;font-weight:600;font-size:12.5px;padding:9px;border-radius:6px;cursor:pointer;
+  }
+  .delete-btn:hover{background:rgba(180,87,63,0.15);}
+  .close-x{
+    position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text-muted);
+    font-size:16px;cursor:pointer;
+  }
+
+  @media (max-width:760px){
+    #sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);transition:transform .25s;width:82vw;flex-basis:82vw;box-shadow:0 0 40px rgba(0,0,0,0.4);}
+    #sidebar.open{transform:translateX(0);}
+    .sidebar-toggle{
+      position:absolute;top:18px;left:18px;z-index:6;background:var(--panel);color:var(--text-light);
+      border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;cursor:pointer;
+    }
+    .room-label{top:70px;}
+    #props-panel{right:12px;left:12px;width:auto;bottom:12px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <button class="sidebar-toggle" id="sidebarToggle" style="display:none;">☰ Ferramentas</button>
+
+  <aside id="sidebar" data-mode="house">
+    <div class="brand">
+      <h1>Ateliê 3D</h1>
+      <p>Monte o cômodo da sua casa ou desenhe um produto do zero — arraste para girar a câmera, role para dar zoom.</p>
+    </div>
+
+    <div class="mode-toggle">
+      <button id="btnModeHouse" class="active">Casa</button>
+      <button id="btnModeProduct">Produto</button>
+      <div class="indicator"></div>
+    </div>
+
+    <!-- HOUSE PANELS -->
+    <div id="houseSections">
+      <div class="section">
+        <div class="section-title">Cômodo</div>
+        <select class="room-select" id="roomSelect">
+          <option value="Sala de estar">Sala de estar</option>
+          <option value="Quarto">Quarto</option>
+          <option value="Cozinha">Cozinha</option>
+          <option value="Escritório">Escritório</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Pintar superfície</div>
+        <div class="section-hint" id="paintHint">Clique numa parede ou no piso para selecioná-los.</div>
+        <div class="swatch-row" id="paintSwatches"></div>
+        <div class="custom-color-row">
+          <input type="color" id="paintCustom" value="#e3d5c3">
+          <span>cor personalizada</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Mobília</div>
+        <div class="section-hint">Escolha uma peça e clique no piso para posicioná-la.</div>
+        <div class="item-grid" id="furnitureGrid"></div>
+        <div class="placing-banner" id="housePlacingBanner">
+          <span>Clique no piso para posicionar</span>
+          <button id="cancelHousePlacing">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCT PANELS -->
+    <div id="productSections" style="display:none;">
+      <div class="section">
+        <div class="section-title">Formas base</div>
+        <div class="section-hint">Escolha uma forma e clique na base para adicioná-la.</div>
+        <div class="item-grid" id="shapeGrid"></div>
+        <div class="placing-banner" id="productPlacingBanner">
+          <span>Clique na base para adicionar</span>
+          <button id="cancelProductPlacing">✕</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Peças do produto</div>
+        <div class="parts-list" id="partsList"></div>
+        <div class="empty-note" id="partsEmpty">Nenhuma peça ainda. Adicione uma forma acima.</div>
+        <button class="ghost-btn" id="clearProduct">Limpar tudo</button>
+        <button class="solid-btn" id="downloadImg" disabled>Baixar imagem</button>
+      </div>
+    </div>
+  </aside>
+
+  <main id="stage">
+    <div class="room-label" id="roomLabel">Sala de estar</div>
+    <canvas id="three-canvas"></canvas>
+    <div class="stage-hint">Arraste para girar · roda do mouse para zoom · arraste um item selecionado para mover</div>
+
+    <div id="props-panel">
+      <button class="close-x" id="propsClose">✕</button>
+      <div class="props-title" id="propsTitle">Item</div>
+      <div class="props-sub" id="propsSub">selecionado</div>
+
+      <div id="propsColorBlock">
+        <div class="props-label">Cor</div>
+        <div class="swatch-row" id="propsSwatches"></div>
+        <div class="custom-color-row">
+          <input type="color" id="propsCustomColor" value="#c9a227">
+          <span>personalizada</span>
+        </div>
+      </div>
+
+      <div id="propsScaleBlock">
+        <div class="props-label">Tamanho</div>
+        <input type="range" id="propsScale" min="0.6" max="1.6" step="0.02" value="1">
+      </div>
+
+      <div id="propsRotateBlock">
+        <div class="props-label">Girar</div>
+        <div class="rotate-row">
+          <button id="rotateLeft">↺ 45°</button>
+          <button id="rotateRight">↻ 45°</button>
+        </div>
+      </div>
+
+      <button class="delete-btn" id="propsDelete">Remover peça</button>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     CONFIG / PALETTES
+  ============================================================ */
+  var PALETTE_SURFACES = ['#F3ECDF','#E3D5C3','#D9C7A3','#C9A227','#8C6E4E','#2F6F63','#4E7C74','#3A3F44','#B7C4C3','#8C5E58'];
+  var PALETTE_ITEMS = ['#C9A227','#2F6F63','#B4573F','#3A3F44','#8C5E58','#E3D5C3','#4E7C74','#DDD0B4'];
+  var WOOD = 0x6B4A34;
+  var WOOD_LIGHT = 0x8A6446;
+  var METAL = 0x9A9490;
+
+  /* ============================================================
+     THREE.JS SETUP
+  ============================================================ */
+  var canvas = document.getElementById('three-canvas');
+  var stageEl = document.getElementById('stage');
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xECE3D2);
+
+  var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  function resize(){
+    var w = stageEl.clientWidth, h = stageEl.clientHeight;
+    renderer.setSize(w,h,false);
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+
+  // Lights
+  var hemi = new THREE.HemisphereLight(0xfff6e5, 0x4b3c2a, 0.75);
+  scene.add(hemi);
+  var key = new THREE.DirectionalLight(0xfff2df, 1.15);
+  key.position.set(6, 9, 5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1536,1536);
+  key.shadow.camera.left = -8; key.shadow.camera.right = 8;
+  key.shadow.camera.top = 8; key.shadow.camera.bottom = -8;
+  key.shadow.bias = -0.0025;
+  scene.add(key);
+  var fill = new THREE.DirectionalLight(0xdce8ea, 0.35);
+  fill.position.set(-6, 5, -4);
+  scene.add(fill);
+
+  var houseGroup = new THREE.Group();
+  var productGroup = new THREE.Group();
+  scene.add(houseGroup);
+  scene.add(productGroup);
+
+  /* ============================================================
+     ROOM (walls + floor)
+  ============================================================ */
+  var ROOM_HALF = 3.5;
+  var WALL_H = 2.6;
+
+  function makeSurfaceMaterial(hex){
+    return new THREE.MeshStandardMaterial({color:hex, roughness:0.92, metalness:0.02});
+  }
+
+  var floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(ROOM_HALF*2, ROOM_HALF*2),
+    makeSurfaceMaterial(0xE3D5C3)
+  );
+  floor.rotation.x = -Math.PI/2;
+  floor.receiveShadow = true;
+  floor.userData = {selectable:true, movable:false, kind:'surface', role:'floor', label:'Piso'};
+  houseGroup.add(floor);
+
+  var backWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(ROOM_HALF*2, WALL_H),
+    makeSurfaceMaterial(0xF3ECDF)
+  );
+  backWall.position.set(0, WALL_H/2, -ROOM_HALF);
+  backWall.receiveShadow = true;
+  backWall.userData = {selectable:true, movable:false, kind:'surface', role:'wall', label:'Parede do fundo'};
+  houseGroup.add(backWall);
+
+  var leftWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(ROOM_HALF*2, WALL_H),
+    makeSurfaceMaterial(0xEDE3D0)
+  );
+  leftWall.position.set(-ROOM_HALF, WALL_H/2, 0);
+  leftWall.rotation.y = Math.PI/2;
+  leftWall.receiveShadow = true;
+  leftWall.userData = {selectable:true, movable:false, kind:'surface', role:'wall', label:'Parede esquerda'};
+  houseGroup.add(leftWall);
+
+  var rightWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(ROOM_HALF*2, WALL_H),
+    makeSurfaceMaterial(0xE7DCC6)
+  );
+  rightWall.position.set(ROOM_HALF, WALL_H/2, 0);
+  rightWall.rotation.y = -Math.PI/2;
+  rightWall.receiveShadow = true;
+  rightWall.userData = {selectable:true, movable:false, kind:'surface', role:'wall', label:'Parede direita'};
+  houseGroup.add(rightWall);
+
+  /* ============================================================
+     FURNITURE BUILDERS
+  ============================================================ */
+  function paintableBox(w,h,d,color,paintable){
+    var m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color:color, roughness:0.6, metalness:0.05}));
+    m.castShadow = true; m.receiveShadow = true;
+    m.userData.paintable = paintable !== false;
+    return m;
+  }
+  function paintableCyl(rt,rb,h,color,paintable,seg){
+    var m = new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||16), new THREE.MeshStandardMaterial({color:color, roughness:0.6, metalness:0.05}));
+    m.castShadow = true; m.receiveShadow = true;
+    m.userData.paintable = paintable !== false;
+    return m;
+  }
+
+  function buildSofa(color){
+    var g = new THREE.Group();
+    var base = paintableBox(1.6,0.36,0.7,color); base.position.y = 0.28; g.add(base);
+    var back = paintableBox(1.6,0.5,0.16,color); back.position.set(0,0.62,-0.27); g.add(back);
+    var armL = paintableBox(0.16,0.42,0.7,color); armL.position.set(-0.72,0.5,0); g.add(armL);
+    var armR = paintableBox(0.16,0.42,0.7,color); armR.position.set(0.72,0.5,0); g.add(armR);
+    [[-0.68,-0.28],[0.68,-0.28],[-0.68,0.28],[0.68,0.28]].forEach(function(p){
+      var leg = paintableCyl(0.035,0.035,0.14,WOOD,false); leg.position.set(p[0],0.07,p[1]); g.add(leg);
+    });
+    g.userData = {selectable:true, movable:true, kind:'furniture', label:'Sofá'};
+    return g;
+  }
+  function buildTable(color){
+    var g = new THREE.Group();
+    var top = paintableBox(1.1,0.06,0.7,color); top.position.y=0.75; g.add(top);
+    [[-0.47,-0.3],[0.47,-0.3],[-0.47,0.3],[0.47,0.3]].forEach(function(p){
+      var leg = paintableCyl(0.035,0.035,0.72,WOOD,false); leg.position.set(p[0],0.36,p[1]); g.add(leg);
+    });
+    g.userData = {selectable:true, movable:true, kind:'furniture', label:'Mesa'};
+    return g;
+  }
+  function buildChair(color){
+    var g = new THREE.Group();
+    var seat = paintableBox(0.46,0.06,0.46,color); seat.position.y=0.46; g.add(seat);
+    var back = paintableBox(0.46,0.5,0.06,color); back.position.set(0,0.72,-0.2); g.add(back);
+    [[-0.19,-0.19],[0.19,-0.19],[-0.19,0.19],[0.19,0.19]].forEach(function(p){
+      var leg = paintableCyl(0.03,0.03,0.46,WOOD,false); leg.position.set(p[0],0.23,p[1]); g.add(leg);
+    });
+    g.userData = {selectable:true, movable:true, kind:'furniture', label:'Cadeira'};
+    return g;
+  }
+  function buildBed(color){
+    var g = new THREE.Group();
+    var frame = paintableBox(1.5,0.28,2.0,WOOD_LIGHT,false); frame.position.y=0.14; g.add(frame);
+    var mattress = paintableBox(1.4,0.22,1.9,color); mattress.position.y=0.4; g.add(mattress);
+    var pillow = paintableBox(1.3,0.1,0.34,0xffffff,false); pillow.position.set(0,0.56,-0.78); g.add(pillow);
+    var head = paintableBox(1.5,0.7,0.1,color); head.position.set(0,0.63,-0.97); g.add(head);
+    g.userData = {selectable:true, movable:true, kind:'furniture', label:'Cama'};
+    return g;
+  }
+  function buildLamp(color){
+    var g = new THREE.Group();
+    var base = paintableCyl(0.14,0.16,0.05,METAL,false); base.position.y=0.025; g.add(base);
+    var pole = paintableCyl(0.02,0.02,0.9,METAL,false); pole.position.y=0.5; g.add(pole);
+    var shade = paintableCyl(0.22,0.15,0.32,color); shade.position.y=1.05; g.add(shade);
+    g.userData = {selectable:true, movable:true, kind:'furniture', label:'Luminária'};
+    return g;
+  }
+  function buildPlant(color){
+    var g = new THREE.Group();
+    var pot = paintableCyl(0.18,0.14,0.26,color); pot.position.y=0.13; g.add(pot);
+    var foliage = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32,0), new THREE.MeshStandardMaterial({color:0x4C7A4A, roughness:0.8}));
+    foliage.position.y=0.62; foliage.castShadow=true; foliage.userData.paintable=false; g.add(foliage);
+    g.userData = {selectable:true, movable:true, kind:'furniture', label:'Planta'};
+    return g;
+  }
+  function buildShelf(color){
+    var g = new THREE.Group();
+    var sideL = paintableBox(0.06,1.4,0.3,color); sideL.position.set(-0.42,0.7,0); g.add(sideL);
+    var sideR = paintableBox(0.06,1.4,0.3,color); sideR.position.set(0.42,0.7,0); g.add(sideR);
+    [0.1,0.5,0.9,1.3].forEach(function(y){
+      var shelf = paintableBox(0.9,0.04,0.3,color); shelf.position.set(0,y,0); g.add(shelf);
+    });
+    g.userData = {selectable:true, movable:true, kind:'furniture', label:'Estante'};
+    return g;
+  }
+
+  var furnitureBuilders = {
+    sofa:{fn:buildSofa, label:'Sofá', icon:'🛋️', color:'#B4573F'},
+    table:{fn:buildTable, label:'Mesa', icon:'🍽️', color:'#DDD0B4'},
+    chair:{fn:buildChair, label:'Cadeira', icon:'🪑', color:'#8C5E58'},
+    bed:{fn:buildBed, label:'Cama', icon:'🛏️', color:'#E3D5C3'},
+    lamp:{fn:buildLamp, label:'Luminária', icon:'💡', color:'#C9A227'},
+    plant:{fn:buildPlant, label:'Planta', icon:'🪴', color:'#8C6E4E'},
+    shelf:{fn:buildShelf, label:'Estante', icon:'📚', color:'#6B4A34'}
+  };
+
+  /* ============================================================
+     PRODUCT BUILDERS (primitive shapes)
+  ============================================================ */
+  var PRODUCT_PLATFORM_Y = 0.1;
+
+  var platform = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.1, 2.2, 0.2, 40),
+    new THREE.MeshStandardMaterial({color:0xDDD0B4, roughness:0.85})
+  );
+  platform.position.y = 0.1;
+  platform.receiveShadow = true;
+  platform.userData = {selectable:true, movable:false, kind:'platform', label:'Base'};
+  productGroup.add(platform);
+
+  var shapeBuilders = {
+    cube:{icon:'◼', label:'Cubo', build:function(color){
+      var m = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.6,0.6), new THREE.MeshStandardMaterial({color:color, roughness:0.5, metalness:0.08}));
+      m.castShadow=true; m.receiveShadow=true;
+      m.userData = {selectable:true, movable:true, kind:'product', label:'Cubo'};
+      return m;
+    }},
+    sphere:{icon:'●', label:'Esfera', build:function(color){
+      var m = new THREE.Mesh(new THREE.SphereGeometry(0.35,28,20), new THREE.MeshStandardMaterial({color:color, roughness:0.4, metalness:0.1}));
+      m.castShadow=true; m.receiveShadow=true;
+      m.userData = {selectable:true, movable:true, kind:'product', label:'Esfera'};
+      return m;
+    }},
+    cylinder:{icon:'▮', label:'Cilindro', build:function(color){
+      var m = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,0.7,28), new THREE.MeshStandardMaterial({color:color, roughness:0.5, metalness:0.08}));
+      m.castShadow=true; m.receiveShadow=true;
+      m.userData = {selectable:true, movable:true, kind:'product', label:'Cilindro'};
+      return m;
+    }},
+    cone:{icon:'▲', label:'Cone', build:function(color){
+      var m = new THREE.Mesh(new THREE.ConeGeometry(0.35,0.7,28), new THREE.MeshStandardMaterial({color:color, roughness:0.5, metalness:0.08}));
+      m.castShadow=true; m.receiveShadow=true;
+      m.userData = {selectable:true, movable:true, kind:'product', label:'Cone'};
+      return m;
+    }},
+    torus:{icon:'◯', label:'Anel', build:function(color){
+      var m = new THREE.Mesh(new THREE.TorusGeometry(0.3,0.11,16,32), new THREE.MeshStandardMaterial({color:color, roughness:0.4, metalness:0.15}));
+      m.castShadow=true; m.receiveShadow=true;
+      m.rotation.x = Math.PI/2;
+      m.userData = {selectable:true, movable:true, kind:'product', label:'Anel'};
+      return m;
+    }},
+    prism:{icon:'⬟', label:'Prisma', build:function(color){
+      var m = new THREE.Mesh(new THREE.CylinderGeometry(0.36,0.36,0.6,6), new THREE.MeshStandardMaterial({color:color, roughness:0.5, metalness:0.08}));
+      m.castShadow=true; m.receiveShadow=true;
+      m.userData = {selectable:true, movable:true, kind:'product', label:'Prisma'};
+      return m;
+    }}
+  };
+
+  var productParts = [];
+
+  /* ============================================================
+     CAMERA ORBIT CONTROLS (custom, no external addon)
+  ============================================================ */
+  var target = new THREE.Vector3(0,1,0);
+  var spherical = {radius:9, theta:Math.PI*0.28, phi:Math.PI*0.34};
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+  function updateCameraPos(){
+    var r = spherical.radius, t = spherical.theta, p = spherical.phi;
+    camera.position.x = target.x + r*Math.sin(p)*Math.sin(t);
+    camera.position.y = target.y + r*Math.cos(p);
+    camera.position.z = target.z + r*Math.sin(p)*Math.cos(t);
+    camera.lookAt(target);
+  }
+  updateCameraPos();
+
+  function focusMode(m){
+    if(m==='house'){ target.set(0,1,0); spherical.radius=9; spherical.theta=Math.PI*0.28; spherical.phi=Math.PI*0.34; }
+    else { target.set(0,0.6,0); spherical.radius=5.5; spherical.theta=Math.PI*0.25; spherical.phi=Math.PI*0.36; }
+    updateCameraPos();
+  }
+
+  /* ============================================================
+     STATE
+  ============================================================ */
+  var mode = 'house';
+  var selected = null;
+  var boxHelper = null;
+  var placingType = null; // house furniture key
+  var placingShape = null; // product shape key
+  var raycaster = new THREE.Raycaster();
+  var mouseNDC = new THREE.Vector2();
+  var dragMode = null; // 'orbit' | 'move'
+  var pointerDownXY = {x:0,y:0};
+  var moved = false;
+  var orbitStart = null;
+  var dragPlane = new THREE.Plane();
+  var dragOffset = new THREE.Vector3();
+
+  function updateMouseNDC(e){
+    var rect = canvas.getBoundingClientRect();
+    mouseNDC.x = ((e.clientX-rect.left)/rect.width)*2-1;
+    mouseNDC.y = -((e.clientY-rect.top)/rect.height)*2+1;
+  }
+
+  function findSelectableAncestor(obj){
+    var o = obj;
+    while(o){
+      if(o.userData && o.userData.selectable) return o;
+      o = o.parent;
+    }
+    return null;
+  }
+
+  /* ============================================================
+     SELECTION + PROPS PANEL
+  ============================================================ */
+  var propsPanel = document.getElementById('props-panel');
+  var propsTitle = document.getElementById('propsTitle');
+  var propsSub = document.getElementById('propsSub');
+  var propsColorBlock = document.getElementById('propsColorBlock');
+  var propsScaleBlock = document.getElementById('propsScaleBlock');
+  var propsRotateBlock = document.getElementById('propsRotateBlock');
+  var propsSwatches = document.getElementById('propsSwatches');
+  var propsCustomColor = document.getElementById('propsCustomColor');
+  var propsScale = document.getElementById('propsScale');
+  var propsDelete = document.getElementById('propsDelete');
+
+  function buildSwatchRow(container, colors, onPick){
+    container.innerHTML = '';
+    colors.forEach(function(hex){
+      var b = document.createElement('button');
+      b.className = 'swatch';
+      b.style.background = hex;
+      b.title = hex;
+      b.addEventListener('click', function(){ onPick(hex); });
+      container.appendChild(b);
+    });
+  }
+
+  function selectObject(obj){
+    selected = obj;
+    if(boxHelper){ scene.remove(boxHelper); boxHelper=null; }
+    boxHelper = new THREE.BoxHelper(obj, 0xC9A227);
+    scene.add(boxHelper);
+
+    var ud = obj.userData;
+    propsPanel.classList.add('show');
+
+    if(ud.role === 'wall' || ud.role === 'floor'){
+      propsTitle.textContent = ud.label;
+      propsSub.textContent = 'superfície';
+      propsColorBlock.style.display = 'block';
+      propsScaleBlock.style.display = 'none';
+      propsRotateBlock.style.display = 'none';
+      propsDelete.style.display = 'none';
+      buildSwatchRow(propsSwatches, PALETTE_SURFACES, function(hex){ applyColorToSelected(hex); });
+    } else {
+      propsTitle.textContent = ud.label;
+      propsSub.textContent = ud.kind === 'product' ? 'peça do produto' : 'móvel';
+      propsColorBlock.style.display = 'block';
+      propsScaleBlock.style.display = 'block';
+      propsRotateBlock.style.display = 'block';
+      propsDelete.style.display = 'block';
+      propsScale.value = obj.scale.x || 1;
+      buildSwatchRow(propsSwatches, PALETTE_ITEMS, function(hex){ applyColorToSelected(hex); });
+    }
+    refreshPartsListHighlight();
+  }
+
+  function deselect(){
+    selected = null;
+    if(boxHelper){ scene.remove(boxHelper); boxHelper=null; }
+    propsPanel.classList.remove('show');
+    refreshPartsListHighlight();
+  }
+
+  function applyColorToSelected(hex){
+    if(!selected) return;
+    var c = new THREE.Color(hex);
+    selected.traverse(function(n){
+      if(n.isMesh && n.userData.paintable !== false){
+        n.material.color.copy(c);
+      }
+    });
+    refreshPartsList();
+  }
+
+  document.getElementById('propsCustomColor').addEventListener('input', function(e){
+    applyColorToSelected(e.target.value);
+  });
+  propsScale.addEventListener('input', function(e){
+    if(!selected) return;
+    selected.scale.setScalar(parseFloat(e.target.value));
+  });
+  document.getElementById('rotateLeft').addEventListener('click', function(){
+    if(selected) selected.rotation.y -= Math.PI/4;
+  });
+  document.getElementById('rotateRight').addEventListener('click', function(){
+    if(selected) selected.rotation.y += Math.PI/4;
+  });
+  propsDelete.addEventListener('click', function(){
+    if(!selected) return;
+    var group = mode==='house' ? houseGroup : productGroup;
+    group.remove(selected);
+    if(mode==='product'){
+      productParts = productParts.filter(function(p){ return p!==selected; });
+      refreshPartsList();
+    }
+    deselect();
+  });
+  document.getElementById('propsClose').addEventListener('click', deselect);
+
+  /* ============================================================
+     POINTER INTERACTION
+  ============================================================ */
+  canvas.addEventListener('pointerdown', function(e){
+    pointerDownXY = {x:e.clientX, y:e.clientY};
+    moved = false;
+    updateMouseNDC(e);
+    raycaster.setFromCamera(mouseNDC, camera);
+
+    if(selected && selected.userData.movable){
+      var hits = raycaster.intersectObject(selected, true);
+      if(hits.length){
+        dragMode = 'move';
+        dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0,1,0), selected.position);
+        var hitPt = new THREE.Vector3();
+        raycaster.ray.intersectPlane(dragPlane, hitPt);
+        if(hitPt) dragOffset.copy(selected.position).sub(hitPt);
+        try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+        return;
+      }
+    }
+    dragMode = 'orbit';
+    orbitStart = {x:e.clientX, y:e.clientY, theta:spherical.theta, phi:spherical.phi};
+  });
+
+  window.addEventListener('pointermove', function(e){
+    if(!dragMode) return;
+    var dx = e.clientX-pointerDownXY.x, dy = e.clientY-pointerDownXY.y;
+    if(Math.abs(dx)>3 || Math.abs(dy)>3) moved = true;
+
+    if(dragMode==='orbit'){
+      spherical.theta = orbitStart.theta - (e.clientX-orbitStart.x)*0.0065;
+      spherical.phi = clamp(orbitStart.phi - (e.clientY-orbitStart.y)*0.0065, 0.18, Math.PI/2-0.03);
+      updateCameraPos();
+    } else if(dragMode==='move' && selected){
+      updateMouseNDC(e);
+      raycaster.setFromCamera(mouseNDC, camera);
+      var hitPt = new THREE.Vector3();
+      if(raycaster.ray.intersectPlane(dragPlane, hitPt)){
+        var nx = hitPt.x + dragOffset.x, nz = hitPt.z + dragOffset.z;
+        if(mode==='house'){
+          nx = clamp(nx, -ROOM_HALF+0.3, ROOM_HALF-0.3);
+          nz = clamp(nz, -ROOM_HALF+0.3, ROOM_HALF-0.3);
+        } else {
+          var dist = Math.sqrt(nx*nx+nz*nz);
+          var maxR = 1.95;
+          if(dist>maxR){ nx = nx/dist*maxR; nz = nz/dist*maxR; }
+        }
+        selected.position.x = nx;
+        selected.position.z = nz;
+      }
+    }
+  });
+
+  window.addEventListener('pointerup', function(e){
+    if(dragMode==='orbit' && !moved){
+      handleClick(e);
+    }
+    dragMode = null;
+  });
+
+  function handleClick(e){
+    updateMouseNDC(e);
+    raycaster.setFromCamera(mouseNDC, camera);
+    var activeGroup = mode==='house' ? houseGroup : productGroup;
+
+    if(mode==='house' && placingType){
+      var plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+      var hitPt = new THREE.Vector3();
+      if(raycaster.ray.intersectPlane(plane, hitPt)){
+        hitPt.x = clamp(hitPt.x, -ROOM_HALF+0.3, ROOM_HALF-0.3);
+        hitPt.z = clamp(hitPt.z, -ROOM_HALF+0.3, ROOM_HALF-0.3);
+        var def = furnitureBuilders[placingType];
+        var obj = def.fn(def.color);
+        obj.position.set(hitPt.x, 0, hitPt.z);
+        houseGroup.add(obj);
+        selectObject(obj);
+      }
+      setHousePlacing(null);
+      return;
+    }
+    if(mode==='product' && placingShape){
+      var plane2 = new THREE.Plane(new THREE.Vector3(0,1,0), -PRODUCT_PLATFORM_Y);
+      var hitPt2 = new THREE.Vector3();
+      if(raycaster.ray.intersectPlane(plane2, hitPt2)){
+        var dist2 = Math.sqrt(hitPt2.x*hitPt2.x + hitPt2.z*hitPt2.z);
+        var maxR2 = 1.9;
+        if(dist2>maxR2){ hitPt2.x = hitPt2.x/dist2*maxR2; hitPt2.z = hitPt2.z/dist2*maxR2; }
+        var sdef = shapeBuilders[placingShape];
+        var color = PALETTE_ITEMS[productParts.length % PALETTE_ITEMS.length];
+        var pobj = sdef.build(color);
+        pobj.position.set(hitPt2.x, PRODUCT_PLATFORM_Y + 0.35, hitPt2.z);
+        productGroup.add(pobj);
+        productParts.push(pobj);
+        selectObject(pobj);
+        refreshPartsList();
+      }
+      setProductPlacing(null);
+      return;
+    }
+
+    var hits = raycaster.intersectObjects(activeGroup.children, true);
+    if(hits.length){
+      var anc = findSelectableAncestor(hits[0].object);
+      if(anc && anc.userData.movable !== undefined ? true : false){}
+      if(anc && (anc.userData.kind === 'furniture' || anc.userData.kind === 'product' || anc.userData.role === 'wall' || anc.userData.role === 'floor')){
+        selectObject(anc);
+        return;
+      }
+    }
+    deselect();
+  }
+
+  canvas.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var factor = e.deltaY>0 ? 1.09 : 0.91;
+    spherical.radius = clamp(spherical.radius*factor, 3, 17);
+    updateCameraPos();
+  }, {passive:false});
+
+  /* ============================================================
+     SIDEBAR — MODE TOGGLE
+  ============================================================ */
+  var btnHouse = document.getElementById('btnModeHouse');
+  var btnProduct = document.getElementById('btnModeProduct');
+  var sidebar = document.getElementById('sidebar');
+  var houseSections = document.getElementById('houseSections');
+  var productSections = document.getElementById('productSections');
+  var roomLabel = document.getElementById('roomLabel');
+
+  function setMode(m){
+    mode = m;
+    deselect();
+    setHousePlacing(null);
+    setProductPlacing(null);
+    sidebar.setAttribute('data-mode', m);
+    if(m==='house'){
+      btnHouse.classList.add('active'); btnProduct.classList.remove('active');
+      houseSections.style.display='block'; productSections.style.display='none';
+      houseGroup.visible = true; productGroup.visible = false;
+      roomLabel.textContent = document.getElementById('roomSelect').value;
+      roomLabel.style.display = 'block';
+    } else {
+      btnProduct.classList.add('active'); btnHouse.classList.remove('active');
+      houseSections.style.display='none'; productSections.style.display='block';
+      houseGroup.visible = false; productGroup.visible = true;
+      roomLabel.style.display = 'none';
+    }
+    focusMode(m);
+  }
+  btnHouse.addEventListener('click', function(){ setMode('house'); });
+  btnProduct.addEventListener('click', function(){ setMode('product'); });
+
+  document.getElementById('roomSelect').addEventListener('change', function(e){
+    roomLabel.textContent = e.target.value;
+  });
+
+  /* ============================================================
+     SIDEBAR — PAINT (walls/floor)
+  ============================================================ */
+  buildSwatchRow(document.getElementById('paintSwatches'), PALETTE_SURFACES, function(hex){
+    if(selected && (selected.userData.role==='wall'||selected.userData.role==='floor')){
+      applyColorToSelected(hex);
+    }
+  });
+  document.getElementById('paintCustom').addEventListener('input', function(e){
+    if(selected && (selected.userData.role==='wall'||selected.userData.role==='floor')){
+      applyColorToSelected(e.target.value);
+    }
+  });
+
+  /* ============================================================
+     SIDEBAR — FURNITURE GRID (house)
+  ============================================================ */
+  var furnitureGrid = document.getElementById('furnitureGrid');
+  var housePlacingBanner = document.getElementById('housePlacingBanner');
+  Object.keys(furnitureBuilders).forEach(function(key){
+    var def = furnitureBuilders[key];
+    var b = document.createElement('button');
+    b.className = 'item-btn';
+    b.innerHTML = '<span class="ico">'+def.icon+'</span><span>'+def.label+'</span>';
+    b.addEventListener('click', function(){
+      setHousePlacing(placingType===key ? null : key);
+    });
+    b.dataset.key = key;
+    furnitureGrid.appendChild(b);
+  });
+  function setHousePlacing(key){
+    placingType = key;
+    Array.prototype.forEach.call(furnitureGrid.children, function(btn){
+      btn.classList.toggle('active', btn.dataset.key===key);
+    });
+    housePlacingBanner.classList.toggle('show', !!key);
+    if(key) deselect();
+  }
+  document.getElementById('cancelHousePlacing').addEventListener('click', function(){ setHousePlacing(null); });
+
+  /* ============================================================
+     SIDEBAR — SHAPE GRID (product)
+  ============================================================ */
+  var shapeGrid = document.getElementById('shapeGrid');
+  var productPlacingBanner = document.getElementById('productPlacingBanner');
+  Object.keys(shapeBuilders).forEach(function(key){
+    var def = shapeBuilders[key];
+    var b = document.createElement('button');
+    b.className = 'item-btn';
+    b.innerHTML = '<span class="ico">'+def.icon+'</span><span>'+def.label+'</span>';
+    b.addEventListener('click', function(){
+      setProductPlacing(placingShape===key ? null : key);
+    });
+    b.dataset.key = key;
+    shapeGrid.appendChild(b);
+  });
+  function setProductPlacing(key){
+    placingShape = key;
+    Array.prototype.forEach.call(shapeGrid.children, function(btn){
+      btn.classList.toggle('active', btn.dataset.key===key);
+    });
+    productPlacingBanner.classList.toggle('show', !!key);
+    if(key) deselect();
+  }
+  document.getElementById('cancelProductPlacing').addEventListener('click', function(){ setProductPlacing(null); });
+
+  /* ============================================================
+     PARTS LIST (product)
+  ============================================================ */
+  var partsList = document.getElementById('partsList');
+  var partsEmpty = document.getElementById('partsEmpty');
+  function refreshPartsList(){
+    partsList.innerHTML = '';
+    if(productParts.length===0){ partsEmpty.style.display='block'; document.getElementById('downloadImg').disabled = true; return; }
+    partsEmpty.style.display='none';
+    document.getElementById('downloadImg').disabled = false;
+    productParts.forEach(function(obj, i){
+      var row = document.createElement('div');
+      row.className = 'part-row' + (obj===selected ? ' selected' : '');
+      var hexColor = '#c9a227';
+      obj.traverse(function(n){ if(n.isMesh){ hexColor = '#'+n.material.color.getHexString(); } });
+      row.innerHTML = '<span class="name"><span class="dot" style="background:'+hexColor+'"></span>'+obj.userData.label+' '+(i+1)+'</span><button data-i="'+i+'">✕</button>';
+      row.addEventListener('click', function(e){
+        if(e.target.tagName==='BUTTON') return;
+        selectObject(obj);
+      });
+      row.querySelector('button').addEventListener('click', function(){
+        productGroup.remove(obj);
+        productParts = productParts.filter(function(p){ return p!==obj; });
+        if(selected===obj) deselect();
+        refreshPartsList();
+      });
+      partsList.appendChild(row);
+    });
+  }
+  function refreshPartsListHighlight(){ refreshPartsList(); }
+  document.getElementById('clearProduct').addEventListener('click', function(){
+    productParts.forEach(function(p){ productGroup.remove(p); });
+    productParts = [];
+    deselect();
+    refreshPartsList();
+  });
+
+  /* ============================================================
+     DOWNLOAD IMAGE (runtime capability)
+  ============================================================ */
+  var downloadsCap = null;
+  (function initDownloads(){
+    if(window.claude && typeof window.claude.use === 'function'){
+      window.claude.use('downloads').then(function(cap){
+        downloadsCap = cap;
+      }).catch(function(){ downloadsCap = null; });
+    }
+  })();
+  document.getElementById('downloadImg').addEventListener('click', function(){
+    try{
+      renderer.render(scene, camera);
+      canvas.toBlob(function(blob){
+        if(!blob) return;
+        if(downloadsCap && typeof downloadsCap.save === 'function'){
+          downloadsCap.save({filename:'meu-produto.png', data:blob}).catch(function(){});
+        }
+      }, 'image/png');
+    }catch(err){ /* silently ignore — feature unavailable */ }
+  });
+
+  /* ============================================================
+     MOBILE SIDEBAR TOGGLE
+  ============================================================ */
+  function checkMobile(){
+    var isMobile = window.innerWidth <= 760;
+    document.getElementById('sidebarToggle').style.display = isMobile ? 'block' : 'none';
+    if(!isMobile) sidebar.classList.remove('open');
+  }
+  document.getElementById('sidebarToggle').addEventListener('click', function(){
+    sidebar.classList.toggle('open');
+  });
+  window.addEventListener('resize', checkMobile);
+  checkMobile();
+
+  /* ============================================================
+     RENDER LOOP
+  ============================================================ */
+  function animate(){
+    requestAnimationFrame(animate);
+    if(boxHelper && selected) boxHelper.update();
+    renderer.render(scene, camera);
+  }
+  resize();
+  animate();
+
+  // ensure canvas sized correctly after fonts/layout settle
+  setTimeout(resize, 60);
+  setTimeout(resize, 300);
+
+})();
+</script>
+</body>
+</html>
